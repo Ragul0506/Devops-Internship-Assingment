@@ -1,0 +1,55 @@
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: examplepassword
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-net
+
+  backend:
+    image: sarwanragul/crud-dd-backend:latest
+    container_name: backend
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://root:examplepassword@mongo:27017/yourdb?authSource=admin
+      PORT: 3000
+    networks:
+      - app-net
+
+  frontend:
+    image: sarwanragul/crud-dd-frontend:latest
+    container_name: frontend
+    depends_on:
+      - backend
+    networks:
+      - app-net
+    # No host port mapping, internal only
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"       # Host port 80 -> Nginx container
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - app-net
+
+volumes:
+  mongo-data:
+
+networks:
+  app-net:
+    driver: bridge
+
+
+
